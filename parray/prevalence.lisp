@@ -31,17 +31,20 @@
 (defmethod (setf paref) (new-value (pa persistent-array) &rest subscripts)
   (cl-prevalence:execute-transaction (tx-setf-paref *system* (id-of pa) new-value subscripts)))
 
-
 (defun open-store (pathname &key auto-set-globals)
   (when *system*
     (close-store))
-  (setf *system* (cl-prevalence:make-prevalence-system pathname))
+  (setf *system* (cl-prevalence:make-prevalence-system pathname
+						       :init-args (list :serializer #'s-serialization:serialize-sexp
+									:deserializer #'s-serialization:deserialize-sexp
+									:file-extension "sexp")))
+						       
   (when auto-set-globals 
     (maphash (lambda (name array)
 	       (setf (symbol-value name) array))
 	     (cl-prevalence::get-root-objects *system*))))
 
 (defun close-store ()
-  (cl-prevalence::close-open-streams *system*)
+  (cl-prevalence:close-open-streams *system*)
   (setf *system* nil))
   
